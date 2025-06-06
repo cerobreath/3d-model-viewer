@@ -10,6 +10,7 @@ A React-based 3D model viewer using Three.js, supporting STL, GLTF, GLB, and ZIP
 *Background color picker with preset and custom options.*
 
 ![Help Dialog](screenshots/help-dialog.png)
+
 *Help dialog with usage instructions.*
 
 ## Features
