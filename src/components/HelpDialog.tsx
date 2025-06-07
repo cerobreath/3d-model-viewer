@@ -23,79 +23,127 @@ const HelpDialog = () => {
             <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-lg z-[9999]">
-          <DialogHeader>
-            <DialogTitle>3D Просмотрщик - Справка</DialogTitle>
-            <DialogDescription className="space-y-4 text-sm max-h-96 overflow-y-auto">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Управление:</h4>
-                <div className="space-y-1 text-gray-600">
-                  <div><strong>ЛКМ + перетаскивание:</strong> поворот модели</div>
-                  <div><strong>Колесо мыши:</strong> масштабирование</div>
-                  <div><strong>ПКМ + перетаскивание:</strong> панорама (перемещение)</div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Загрузка файлов:</h4>
-                <div className="space-y-2 text-gray-600">
-                  <div>
-                    <strong>Параметр file:</strong> <code className="bg-gray-100 px-1 rounded text-xs">?file=model.stl</code>
-                    <br />
-                    <span className="text-xs">Загружает файл из папки public/models/</span>
-                  </div>
-                  <div>
-                    <strong>Параметр fileUrl:</strong> <code className="bg-gray-100 px-1 rounded text-xs">?fileUrl=https://example.com/model.gltf</code>
-                    <br />
-                    <span className="text-xs">Загружает файл по прямой ссылке</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Поддерживаемые форматы:</h4>
-                <div className="space-y-2 text-gray-600">
-                  <div>
-                    <strong>STL файлы:</strong> <code className="bg-gray-100 px-1 rounded text-xs">.stl</code>
-                    <br />
-                    <span className="text-xs">Простые 3D модели без материалов и текстур</span>
-                  </div>
-                  <div>
-                    <strong>GLTF файлы:</strong> <code className="bg-gray-100 px-1 rounded text-xs">.gltf</code>
-                    <br />
-                    <span className="text-xs">Требует .bin файл и текстуры в той же папке</span>
-                  </div>
-                  <div>
-                    <strong>GLB файлы:</strong> <code className="bg-gray-100 px-1 rounded text-xs">.glb</code>
-                    <br />
-                    <span className="text-xs">Все данные включены в один файл</span>
-                  </div>
-                  <div>
-                    <strong>ZIP архивы:</strong> <code className="bg-gray-100 px-1 rounded text-xs">.zip</code>
-                    <br />
-                    <span className="text-xs">Должен содержать .gltf файл и все зависимости (текстуры, .bin файлы)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Режимы отображения:</h4>
-                <div className="space-y-1 text-gray-600">
-                  <div><strong>Сетка:</strong> модель с координатной сеткой</div>
-                  <div><strong>Оси XYZ:</strong> модель с осями координат</div>
-                  <div><strong>Чистый фон:</strong> только модель без дополнительных элементов</div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Настройка фона:</h4>
-                <div className="text-gray-600">
-                  <div>Используйте цветовой селектор для изменения цвета фона сцены</div>
-                  <div className="text-xs mt-1">Настройки сохраняются между сессиями</div>
-                </div>
-              </div>
-            </DialogDescription>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto z-[99999]">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              3D Просмотрщик - Справка
+            </DialogTitle>
           </DialogHeader>
+
+          <div className="space-y-6 text-sm">
+            {/* Управление */}
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <span className="text-lg">🎮</span> Управление
+              </h4>
+              <div className="space-y-2 text-blue-800">
+                <div className="flex items-start gap-2">
+                  <span className="bg-blue-200 text-blue-900 px-2 py-1 rounded text-xs font-mono min-w-0 whitespace-nowrap">ЛКМ</span>
+                  <span>перетаскивание для поворота модели</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="bg-blue-200 text-blue-900 px-2 py-1 rounded text-xs font-mono min-w-0 whitespace-nowrap">Колесо</span>
+                  <span>масштабирование (увеличение/уменьшение)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="bg-blue-200 text-blue-900 px-2 py-1 rounded text-xs font-mono min-w-0 whitespace-nowrap">ПКМ</span>
+                  <span>перетаскивание для панорамы (перемещение)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Загрузка файлов */}
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <h4 className="font-bold text-green-900 mb-3 flex items-center gap-2">
+                <span className="text-lg">📁</span> Загрузка файлов
+              </h4>
+              <div className="space-y-3 text-green-800">
+                <div>
+                  <div className="font-semibold mb-1">Локальные файлы:</div>
+                  <code className="bg-green-200 text-green-900 px-2 py-1 rounded text-xs block mb-1">
+                    ?file=model.stl
+                  </code>
+                  <div className="text-xs text-green-700">Загружает файл из папки public/models/</div>
+                </div>
+                <div>
+                  <div className="font-semibold mb-1">Внешние ссылки:</div>
+                  <code className="bg-green-200 text-green-900 px-2 py-1 rounded text-xs block mb-1">
+                    ?fileUrl=https://example.com/model.gltf
+                  </code>
+                  <div className="text-xs text-green-700">Загружает файл по прямой ссылке</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Форматы файлов */}
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <h4 className="font-bold text-purple-900 mb-3 flex items-center gap-2">
+                <span className="text-lg">📋</span> Поддерживаемые форматы
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-purple-800">
+                <div className="bg-white rounded p-3 border border-purple-100">
+                  <div className="font-semibold flex items-center gap-2 mb-1">
+                    <code className="bg-purple-200 text-purple-900 px-1 rounded text-xs">.stl</code>
+                    STL файлы
+                  </div>
+                  <div className="text-xs text-purple-700">Простые 3D модели без материалов</div>
+                </div>
+                <div className="bg-white rounded p-3 border border-purple-100">
+                  <div className="font-semibold flex items-center gap-2 mb-1">
+                    <code className="bg-purple-200 text-purple-900 px-1 rounded text-xs">.gltf</code>
+                    GLTF файлы
+                  </div>
+                  <div className="text-xs text-purple-700">Требует .bin файл и текстуры</div>
+                </div>
+                <div className="bg-white rounded p-3 border border-purple-100">
+                  <div className="font-semibold flex items-center gap-2 mb-1">
+                    <code className="bg-purple-200 text-purple-900 px-1 rounded text-xs">.glb</code>
+                    GLB файлы
+                  </div>
+                  <div className="text-xs text-purple-700">Все данные в одном файле</div>
+                </div>
+                <div className="bg-white rounded p-3 border border-purple-100">
+                  <div className="font-semibold flex items-center gap-2 mb-1">
+                    <code className="bg-purple-200 text-purple-900 px-1 rounded text-xs">.zip</code>
+                    ZIP архивы
+                  </div>
+                  <div className="text-xs text-purple-700">Содержит .gltf и зависимости</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Режимы отображения */}
+            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+              <h4 className="font-bold text-orange-900 mb-3 flex items-center gap-2">
+                <span className="text-lg">🎨</span> Режимы отображения
+              </h4>
+              <div className="space-y-2 text-orange-800">
+                <div className="flex items-center gap-2">
+                  <span className="bg-orange-200 text-orange-900 px-2 py-1 rounded text-xs font-semibold">Сетка</span>
+                  <span>модель с координатной сеткой</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-orange-200 text-orange-900 px-2 py-1 rounded text-xs font-semibold">XYZ</span>
+                  <span>модель с осями координат</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-orange-200 text-orange-900 px-2 py-1 rounded text-xs font-semibold">Чистый</span>
+                  <span>только модель без дополнительных элементов</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Настройки */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <span className="text-lg">⚙️</span> Настройки
+              </h4>
+              <div className="text-gray-700">
+                <div>Используйте цветовой селектор для изменения цвета фона сцены</div>
+                <div className="text-xs mt-1 text-gray-600">💾 Настройки автоматически сохраняются</div>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
   );
