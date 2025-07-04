@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AlertCircle, FileIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,18 +11,20 @@ const Index = () => {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('grid');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('clean'); // Изменено на 'clean' по умолчанию
   const [backgroundColor, setBackgroundColor] = useState(() => {
     return localStorage.getItem('viewer-background-color') || '#f8fafc';
   });
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [wireframe, setWireframe] = useState(false);
   const viewerRef = useRef<ViewerRef | null>(null);
-  viewerRef.current?.resetView();
+  // Убираем лишний вызов resetView()
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const fileParam = urlParams.get('file');
     const fileUrlParam = urlParams.get('fileUrl');
-    
+
     if (!fileParam && !fileUrlParam) {
       setError('Не указан параметр "file" в URL. Пример: ?file=example.stl или ?fileUrl=https://example.com/model.gltf');
       return;
@@ -42,22 +43,22 @@ const Index = () => {
       // Local file from public/models/
       console.log('Loading 3D file from URL parameter:', fileParam);
       setFileName(fileParam);
-      
+
       const modelUrl = `/models/${fileParam}`;
-      
+
       fetch(modelUrl, { method: 'HEAD' })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Файл не найден: ${fileParam}`);
-          }
-          setFileUrl(modelUrl);
-          setIsLoading(false);
-        })
-        .catch(err => {
-          console.error('Error loading 3D file:', err);
-          setError(`Ошибка загрузки файла: ${fileParam}. Убедитесь, что файл существует в папке public/models/`);
-          setIsLoading(false);
-        });
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Файл не найден: ${fileParam}`);
+            }
+            setFileUrl(modelUrl);
+            setIsLoading(false);
+          })
+          .catch(err => {
+            console.error('Error loading 3D file:', err);
+            setError(`Ошибка загрузки файла: ${fileParam}. Убедитесь, что файл существует в папке public/models/`);
+            setIsLoading(false);
+          });
     }
   }, []);
 
@@ -102,6 +103,14 @@ const Index = () => {
     }
   }, []);
 
+  const handleAutoRotateToggle = useCallback(() => {
+    setAutoRotate(prev => !prev);
+  }, []);
+
+  const handleWireframeToggle = useCallback(() => {
+    setWireframe(prev => !prev);
+  }, []);
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -115,55 +124,61 @@ const Index = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Alert className="max-w-2xl border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-700">
-            {error}
-          </AlertDescription>
-        </Alert>
-      </div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <Alert className="max-w-2xl border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-700">
+              {error}
+            </AlertDescription>
+          </Alert>
+        </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white relative viewer-container">
-      {/* File info overlay */}
-      {fileName && (
-          <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2 shadow-lg border border-gray-200 max-w-[calc(100vw-120px)] sm:max-w-none">
-            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-              <FileIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
-              <span className="font-medium text-gray-800 truncate">{fileName}</span>
+      <div className="min-h-screen bg-white relative viewer-container">
+        {/* File info overlay */}
+        {fileName && (
+            <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2 shadow-lg border border-gray-200 max-w-[calc(100vw-120px)] sm:max-w-none">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <FileIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
+                <span className="font-medium text-gray-800 truncate">{fileName}</span>
+              </div>
             </div>
-          </div>
-      )}
+        )}
 
-      {/* Control Panel */}
-      {fileUrl && !error && (
-        <ControlPanel
-          onFullscreen={handleFullscreen}
-          onResetView={() => handleViewerControls('reset')}
-          onZoomIn={() => handleViewerControls('zoomIn')}
-          onZoomOut={() => handleViewerControls('zoomOut')}
-          isFullscreen={isFullscreen}
-          displayMode={displayMode}
-          onDisplayModeChange={setDisplayMode}
-          backgroundColor={backgroundColor}
-          onBackgroundColorChange={setBackgroundColor}
-        />
-      )}
+        {/* Control Panel */}
+        {fileUrl && !error && (
+            <ControlPanel
+                onFullscreen={handleFullscreen}
+                onResetView={() => handleViewerControls('reset')}
+                onZoomIn={() => handleViewerControls('zoomIn')}
+                onZoomOut={() => handleViewerControls('zoomOut')}
+                isFullscreen={isFullscreen}
+                displayMode={displayMode}
+                onDisplayModeChange={setDisplayMode}
+                backgroundColor={backgroundColor}
+                onBackgroundColorChange={setBackgroundColor}
+                autoRotate={autoRotate}
+                onAutoRotateToggle={handleAutoRotateToggle}
+                wireframe={wireframe}
+                onWireframeToggle={handleWireframeToggle}
+            />
+        )}
 
-      {/* 3D Viewer - Full screen */}
-      <div className="w-full h-screen">
-        <ThreeDViewer 
-          ref={viewerRef}
-          fileUrl={fileUrl} 
-          isLoading={isLoading}
-          displayMode={displayMode}
-          backgroundColor={backgroundColor}
-        />
+        {/* 3D Viewer - Full screen */}
+        <div className="w-full h-screen">
+          <ThreeDViewer
+              ref={viewerRef}
+              fileUrl={fileUrl}
+              isLoading={isLoading}
+              displayMode={displayMode}
+              backgroundColor={backgroundColor}
+              autoRotate={autoRotate}
+              wireframe={wireframe}
+          />
+        </div>
       </div>
-    </div>
   );
 };
 
