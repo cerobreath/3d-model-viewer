@@ -39,7 +39,7 @@ const HelpDialog = () => {
               <div className="space-y-2 text-blue-800">
                 <div className="flex items-start gap-2">
                   <span className="bg-blue-200 text-blue-900 px-2 py-1 rounded text-xs font-mono min-w-0 whitespace-nowrap">ЛКМ</span>
-                  <span>перетаскивание для поворота модели</span>
+                  <span>перетаскивание для поворота модели (неограниченное вращение в 3D)</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="bg-blue-200 text-blue-900 px-2 py-1 rounded text-xs font-mono min-w-0 whitespace-nowrap">Колесо</span>
@@ -48,6 +48,10 @@ const HelpDialog = () => {
                 <div className="flex items-start gap-2">
                   <span className="bg-blue-200 text-blue-900 px-2 py-1 rounded text-xs font-mono min-w-0 whitespace-nowrap">ПКМ</span>
                   <span>перетаскивание для панорамы (перемещение)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="bg-blue-200 text-blue-900 px-2 py-1 rounded text-xs font-mono min-w-0 whitespace-nowrap">Кнопки</span>
+                  <span>увеличение/уменьшение масштаба, сброс вида</span>
                 </div>
               </div>
             </div>
@@ -119,6 +123,10 @@ const HelpDialog = () => {
               </h4>
               <div className="space-y-2 text-orange-800">
                 <div className="flex items-center gap-2">
+                  <span className="bg-orange-200 text-orange-900 px-2 py-1 rounded text-xs font-semibold">Чистый</span>
+                  <span>только модель без дополнительных элементов (по умолчанию)</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <span className="bg-orange-200 text-orange-900 px-2 py-1 rounded text-xs font-semibold">Сетка</span>
                   <span>модель с координатной сеткой</span>
                 </div>
@@ -126,21 +134,27 @@ const HelpDialog = () => {
                   <span className="bg-orange-200 text-orange-900 px-2 py-1 rounded text-xs font-semibold">XYZ</span>
                   <span>модель с осями координат</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-orange-200 text-orange-900 px-2 py-1 rounded text-xs font-semibold">Чистый</span>
-                  <span>только модель без дополнительных элементов</span>
-                </div>
               </div>
             </div>
 
-            {/* Настройки */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="text-lg">⚙️</span> Настройки
+            {/* Визуальные настройки */}
+            <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
+              <h4 className="font-bold text-teal-900 mb-3 flex items-center gap-2">
+                <span className="text-lg">🎛️</span> Визуальные настройки
               </h4>
-              <div className="text-gray-700">
-                <div>Используйте цветовой селектор для изменения цвета фона сцены</div>
-                <div className="text-xs mt-1 text-gray-600">💾 Настройки автоматически сохраняются</div>
+              <div className="space-y-2 text-teal-800">
+                <div className="flex items-center gap-2">
+                  <span className="bg-teal-200 text-teal-900 px-2 py-1 rounded text-xs font-semibold">Каркас</span>
+                  <span>переключение между сплошным и каркасным отображением</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-teal-200 text-teal-900 px-2 py-1 rounded text-xs font-semibold">Автоповорот</span>
+                  <span>автоматическое вращение модели</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-teal-200 text-teal-900 px-2 py-1 rounded text-xs font-semibold">Цвет фона</span>
+                  <span>встроенный селектор цвета фона сцены</span>
+                </div>
               </div>
             </div>
           </div>

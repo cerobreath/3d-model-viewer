@@ -39,6 +39,8 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
     const frameRef = useRef<number>();
     const gridHelperRef = useRef<THREE.GridHelper>();
     const axesHelperRef = useRef<THREE.AxesHelper>();
+    // Добавляем группу для автоповорота
+    const rotationGroupRef = useRef<THREE.Group>();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>('');
     // Добавляем ref для сохранения состояния автовращения
@@ -93,6 +95,11 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf8fafc);
         sceneRef.current = scene;
+
+        // Создаем группу для автоповорота
+        const rotationGroup = new THREE.Group();
+        rotationGroupRef.current = rotationGroup;
+        scene.add(rotationGroup);
 
         // Улучшенная настройка камеры с более широким диапазоном
         const camera = new THREE.PerspectiveCamera(75, 1, 0.001, 10000);
@@ -173,7 +180,6 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
 
         const gridHelper = new THREE.GridHelper(100, 50, 0x778394, 0xe2e8f0);
         gridHelperRef.current = gridHelper;
-        // scene.add(gridHelper);
 
         const axesHelper = new THREE.AxesHelper(50);
         axesHelperRef.current = axesHelper;
@@ -199,9 +205,9 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
         const animate = () => {
             frameRef.current = requestAnimationFrame(animate);
 
-            // Автоповорот модели - используем ref для получения актуального значения
-            if (autoRotateRef.current && meshRef.current) {
-                meshRef.current.rotation.y += 0.01;
+            // Автоповорот группы - используем ref для получения актуального значения
+            if (autoRotateRef.current && rotationGroupRef.current) {
+                rotationGroupRef.current.rotation.y += 0.01;
             }
 
             controls.update();
@@ -231,24 +237,24 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
         };
     }, []); // Убираем все зависимости для инициализации сцены
 
-    // Handle display mode changes - НЕ СОХРАНЯЕМ позицию камеры
+    // Handle display mode changes - теперь добавляем элементы в группу автоповорота
     useEffect(() => {
-        if (!sceneRef.current || !gridHelperRef.current || !axesHelperRef.current) return;
+        if (!rotationGroupRef.current || !gridHelperRef.current || !axesHelperRef.current) return;
 
-        const scene = sceneRef.current;
+        const rotationGroup = rotationGroupRef.current;
         const grid = gridHelperRef.current;
         const axes = axesHelperRef.current;
 
-        // Просто добавляем/убираем элементы без изменения позиции камеры
-        scene.remove(grid);
-        scene.remove(axes);
+        // Убираем элементы из группы
+        rotationGroup.remove(grid);
+        rotationGroup.remove(axes);
 
         switch (displayMode) {
             case 'grid':
-                scene.add(grid);
+                rotationGroup.add(grid);
                 break;
             case 'axes':
-                scene.add(axes);
+                rotationGroup.add(axes);
                 break;
             case 'clean':
                 break;
@@ -311,14 +317,14 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
 
     // Load file based on URL
     useEffect(() => {
-        if (!fileUrl || !sceneRef.current) return;
+        if (!fileUrl || !rotationGroupRef.current) return;
 
         console.log('Loading 3D file:', fileUrl);
         setLoading(true);
         setError('');
 
         if (meshRef.current) {
-            sceneRef.current.remove(meshRef.current);
+            rotationGroupRef.current.remove(meshRef.current);
             if (meshRef.current instanceof THREE.Mesh) {
                 meshRef.current.geometry.dispose();
                 if (Array.isArray(meshRef.current.material)) {
@@ -387,7 +393,8 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
                             });
 
                             meshRef.current = model;
-                            sceneRef.current!.add(model);
+                            // Добавляем модель в группу автоповорота
+                            rotationGroupRef.current!.add(model);
 
                             // Применяем автоматическое масштабирование
                             fitModelToView(model);
@@ -442,7 +449,8 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
                     mesh.receiveShadow = true;
                     meshRef.current = mesh;
 
-                    sceneRef.current!.add(mesh);
+                    // Добавляем модель в группу автоповорота
+                    rotationGroupRef.current!.add(mesh);
 
                     // Применяем автоматическое масштабирование
                     fitModelToView(mesh);
@@ -476,7 +484,8 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
                     });
 
                     meshRef.current = model;
-                    sceneRef.current!.add(model);
+                    // Добавляем модель в группу автоповорота
+                    rotationGroupRef.current!.add(model);
 
                     // Применяем автоматическое масштабирование
                     fitModelToView(model);

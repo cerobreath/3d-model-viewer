@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 
 interface ColorPickerProps {
@@ -14,10 +13,11 @@ interface HSV {
 
 const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
     const [hsv, setHsv] = useState<HSV>({ h: 0, s: 100, v: 100 });
+    const [isDraggingSV, setIsDraggingSV] = useState(false);
+    const [isDraggingHue, setIsDraggingHue] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const hueCanvasRef = useRef<HTMLCanvasElement>(null);
 
-    // ... keep existing code (hexToHsv function)
     const hexToHsv = (hex: string): HSV => {
         const r = parseInt(hex.slice(1, 3), 16) / 255;
         const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -28,8 +28,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
         const diff = max - min;
 
         let h = 0;
-        let s = max === 0 ? 0 : (diff / max) * 100;
-        let v = max * 100;
+        const s = max === 0 ? 0 : (diff / max) * 100;
+        const v = max * 100;
 
         if (diff !== 0) {
             switch (max) {
@@ -50,14 +50,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
         return { h, s, v };
     };
 
-    // ... keep existing code (hsvToHex function)
     const hsvToHex = (h: number, s: number, v: number): string => {
-        s = s / 100;
-        v = v / 100;
+        const sNormalized = s / 100;
+        const vNormalized = v / 100;
 
-        const c = v * s;
+        const c = vNormalized * sNormalized;
         const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-        const m = v - c;
+        const m = vNormalized - c;
 
         let r = 0, g = 0, b = 0;
 
@@ -82,14 +81,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
         return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
     };
 
-    // ... keep existing code (useEffect for initialization)
     useEffect(() => {
         if (color && color !== hsvToHex(hsv.h, hsv.s, hsv.v)) {
             setHsv(hexToHsv(color));
         }
     }, [color]);
 
-    // ... keep existing code (drawSaturationValue function)
     const drawSaturationValue = () => {
         if (!canvasRef.current) return;
 
@@ -120,7 +117,6 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
         ctx.fillRect(0, 0, width, height);
     };
 
-    // ... keep existing code (drawHue function)
     const drawHue = () => {
         if (!hueCanvasRef.current) return;
 
@@ -152,33 +148,87 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
         drawHue();
     }, []);
 
-    // ... keep existing code (click handlers)
-    const handleSaturationValueClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const updateSaturationValue = (e: React.MouseEvent<HTMLCanvasElement> | MouseEvent) => {
         if (!canvasRef.current) return;
 
         const rect = canvasRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        const s = (x / rect.width) * 100;
-        const v = 100 - (y / rect.height) * 100;
+        const s = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        const v = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
 
-        const newHsv = { ...hsv, s: Math.max(0, Math.min(100, s)), v: Math.max(0, Math.min(100, v)) };
+        const newHsv = { ...hsv, s, v };
         setHsv(newHsv);
         onColorChange(hsvToHex(newHsv.h, newHsv.s, newHsv.v));
     };
 
-    const handleHueClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const updateHue = (e: React.MouseEvent<HTMLCanvasElement> | MouseEvent) => {
         if (!hueCanvasRef.current) return;
 
         const rect = hueCanvasRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
-        const h = (x / rect.width) * 360;
+        const h = Math.max(0, Math.min(360, (x / rect.width) * 360));
 
-        const newHsv = { ...hsv, h: Math.max(0, Math.min(360, h)) };
+        const newHsv = { ...hsv, h };
         setHsv(newHsv);
         onColorChange(hsvToHex(newHsv.h, newHsv.s, newHsv.v));
     };
+
+    // Mouse event handlers for saturation/value canvas
+    const handleSaturationValueMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        setIsDraggingSV(true);
+        updateSaturationValue(e);
+    };
+
+    const handleSaturationValueMouseMove = (e: MouseEvent) => {
+        if (isDraggingSV) {
+            updateSaturationValue(e);
+        }
+    };
+
+    const handleSaturationValueMouseUp = () => {
+        setIsDraggingSV(false);
+    };
+
+    // Mouse event handlers for hue canvas
+    const handleHueMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        setIsDraggingHue(true);
+        updateHue(e);
+    };
+
+    const handleHueMouseMove = (e: MouseEvent) => {
+        if (isDraggingHue) {
+            updateHue(e);
+        }
+    };
+
+    const handleHueMouseUp = () => {
+        setIsDraggingHue(false);
+    };
+
+    // Add global mouse event listeners
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            handleSaturationValueMouseMove(e);
+            handleHueMouseMove(e);
+        };
+
+        const handleMouseUp = () => {
+            handleSaturationValueMouseUp();
+            handleHueMouseUp();
+        };
+
+        if (isDraggingSV || isDraggingHue) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDraggingSV, isDraggingHue]);
 
     return (
         <div className="space-y-3">
@@ -198,7 +248,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
                     width={200}
                     height={120}
                     className="w-full h-24 rounded border border-gray-200 cursor-crosshair"
-                    onClick={handleSaturationValueClick}
+                    onMouseDown={handleSaturationValueMouseDown}
                 />
                 {/* Current color indicator */}
                 <div
@@ -218,7 +268,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onColorChange }) => {
                     width={200}
                     height={20}
                     className="w-full h-4 rounded border border-gray-200 cursor-pointer"
-                    onClick={handleHueClick}
+                    onMouseDown={handleHueMouseDown}
                 />
                 {/* Hue indicator */}
                 <div
