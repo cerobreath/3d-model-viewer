@@ -3,9 +3,11 @@ import * as THREE from 'three';
 import {STLLoader} from 'three/examples/jsm/loaders/STLLoader.js';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
+import {RGBELoader} from 'three/examples/jsm/loaders/RGBELoader.js';
 import {Loader2} from 'lucide-react';
 import JSZip from 'jszip';
 import {DisplayMode} from './DisplayModeControls';
+import {LightingMode} from './LightingControls';
 
 interface ViewerProps {
     fileUrl: string;
@@ -14,6 +16,7 @@ interface ViewerProps {
     backgroundColor: string;
     autoRotate: boolean;
     wireframe: boolean;
+    lightingMode: LightingMode;
 }
 
 export interface ViewerRef {
@@ -28,7 +31,8 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
                                                              displayMode,
                                                              backgroundColor,
                                                              autoRotate,
-                                                             wireframe
+                                                             wireframe,
+                                                             lightingMode
                                                          }, ref) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<THREE.Scene>();
@@ -45,6 +49,9 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
     const [error, setError] = useState<string>('');
     // Добавляем ref для сохранения состояния автовращения
     const autoRotateRef = useRef(autoRotate);
+    // Добавляем refs для управления освещением
+    const lightsRef = useRef<THREE.Light[]>([]);
+    const envMapRef = useRef<THREE.Texture | null>(null);
 
     // Обновляем ref при изменении пропа autoRotate
     useEffect(() => {
@@ -63,7 +70,7 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
                     const maxDim = Math.max(size.x, size.y, size.z);
 
                     // Улучшенное позиционирование камеры
-                    const distance = maxDim * 2.5;
+                    const distance = maxDim * 1.5; // standart 1.5
                     cameraRef.current.position.set(distance, distance, distance);
                     cameraRef.current.lookAt(center);
                     controlsRef.current.target.copy(center);
@@ -86,6 +93,223 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
             }
         }
     }));
+
+    // Функция для удаления всех источников света
+    const clearLights = () => {
+        if (!sceneRef.current) return;
+
+        lightsRef.current.forEach(light => {
+            sceneRef.current!.remove(light);
+        });
+        lightsRef.current = [];
+    };
+
+    // Функция для настройки освещения
+    const setupLighting = (mode: LightingMode) => {
+        if (!sceneRef.current || !rendererRef.current) return;
+
+        // Очищаем предыдущие источники света
+        clearLights();
+
+        // Убираем environment map
+        if (envMapRef.current) {
+            envMapRef.current.dispose();
+            envMapRef.current = null;
+        }
+        sceneRef.current.environment = null;
+
+        switch (mode) {
+            case 'default':
+                // Стандартное освещение (текущее)
+                setupDefaultLighting();
+                break;
+            case 'none':
+                // Без освещения - только ambient
+                setupNoLighting();
+                break;
+            case 'neutral':
+                // Нейтральное освещение
+                setupNeutralLighting();
+                break;
+            case 'venice-sunset':
+                // Закат в Венеции
+                setupVeniceSunsetLighting();
+                break;
+            case 'footprint-court':
+                // HDR Labs
+                setupFootprintCourtLighting();
+                break;
+        }
+
+        // Обновляем материалы для применения новых настроек освещения
+        if (meshRef.current) {
+            meshRef.current.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(material => {
+                            material.needsUpdate = true;
+                        });
+                    } else {
+                        child.material.needsUpdate = true;
+                    }
+                }
+            });
+        }
+    };
+
+    const setupDefaultLighting = () => {
+        if (!sceneRef.current) return;
+
+        // Абсолютное освещение со всех сторон
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        sceneRef.current.add(ambientLight);
+        lightsRef.current.push(ambientLight);
+
+        // Создаем HemisphereLight для мягкого равномерного освещения
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        hemisphereLight.position.set(0, 50, 0);
+        sceneRef.current.add(hemisphereLight);
+        lightsRef.current.push(hemisphereLight);
+
+        // Создаем множество направленных источников света со всех сторон
+        const lightPositions = [
+            [100, 100, 100],   // Передний верхний правый
+            [-100, 100, 100],  // Передний верхний левый
+            [100, -100, 100],  // Передний нижний правый
+            [-100, -100, 100], // Передний нижний левый
+            [100, 100, -100],  // Задний верхний правый
+            [-100, 100, -100], // Задний верхний левый
+            [100, -100, -100], // Задний нижний правый
+            [-100, -100, -100],// Задний нижний левый
+            [100, 0, 0],       // Правый
+            [-100, 0, 0],      // Левый
+            [0, 100, 0],       // Верхний
+            [0, -100, 0],      // Нижний
+            [0, 0, 100],       // Передний
+            [0, 0, -100],      // Задний
+        ];
+
+        lightPositions.forEach(pos => {
+            const light = new THREE.DirectionalLight(0xffffff, 1.3);
+            light.position.set(pos[0], pos[1], pos[2]);
+            sceneRef.current!.add(light);
+            lightsRef.current.push(light);
+        });
+
+        // Один основной свет с очень слабыми тенями только для определения граней
+        const mainLight = new THREE.DirectionalLight(0xffffff, 0.2);
+        mainLight.position.set(50, 50, 50);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.camera.near = 0.1;
+        mainLight.shadow.camera.far = 500;
+        mainLight.shadow.camera.left = -100;
+        mainLight.shadow.camera.right = 100;
+        mainLight.shadow.camera.top = 100;
+        mainLight.shadow.camera.bottom = -100;
+        mainLight.shadow.bias = -0.0001;
+        sceneRef.current.add(mainLight);
+        lightsRef.current.push(mainLight);
+    };
+
+    const setupNoLighting = () => {
+        if (!sceneRef.current) return;
+
+        // Только базовое ambient освещение
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        sceneRef.current.add(ambientLight);
+        lightsRef.current.push(ambientLight);
+    };
+
+    const setupNeutralLighting = () => {
+        if (!sceneRef.current) return;
+
+        // Нейтральное освещение
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        sceneRef.current.add(ambientLight);
+        lightsRef.current.push(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        mainLight.position.set(10, 10, 5);
+        mainLight.castShadow = true;
+        sceneRef.current.add(mainLight);
+        lightsRef.current.push(mainLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-10, 5, -5);
+        sceneRef.current.add(fillLight);
+        lightsRef.current.push(fillLight);
+    };
+
+    const setupVeniceSunsetLighting = () => {
+        if (!sceneRef.current) return;
+
+        // Теплое освещение заката
+        const ambientLight = new THREE.AmbientLight(0xffd4a3, 0.3);
+        sceneRef.current.add(ambientLight);
+        lightsRef.current.push(ambientLight);
+
+        // Основной свет заката
+        const sunLight = new THREE.DirectionalLight(0xffa500, 1.2);
+        sunLight.position.set(20, 5, 10);
+        sunLight.castShadow = true;
+        sceneRef.current.add(sunLight);
+        lightsRef.current.push(sunLight);
+
+        // Дополнительное мягкое освещение
+        const fillLight = new THREE.DirectionalLight(0xff6b35, 0.4);
+        fillLight.position.set(-10, 10, -5);
+        sceneRef.current.add(fillLight);
+        lightsRef.current.push(fillLight);
+
+        // Подсветка снизу
+        const bottomLight = new THREE.DirectionalLight(0xffd4a3, 0.2);
+        bottomLight.position.set(0, -10, 0);
+        sceneRef.current.add(bottomLight);
+        lightsRef.current.push(bottomLight);
+    };
+
+    const setupFootprintCourtLighting = () => {
+        if (!sceneRef.current) return;
+
+        // HDR-стиль освещения
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        sceneRef.current.add(ambientLight);
+        lightsRef.current.push(ambientLight);
+
+        // Основной яркий свет
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        keyLight.position.set(15, 25, 10);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        sceneRef.current.add(keyLight);
+        lightsRef.current.push(keyLight);
+
+        // Заполняющий свет
+        const fillLight = new THREE.DirectionalLight(0xb3d9ff, 0.6);
+        fillLight.position.set(-15, 10, -10);
+        sceneRef.current.add(fillLight);
+        lightsRef.current.push(fillLight);
+
+        // Контровой свет
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        rimLight.position.set(0, 5, -20);
+        sceneRef.current.add(rimLight);
+        lightsRef.current.push(rimLight);
+
+        // Дополнительные акцентные источники
+        const accent1 = new THREE.PointLight(0x00ff88, 0.3, 100);
+        accent1.position.set(10, 0, 10);
+        sceneRef.current.add(accent1);
+        lightsRef.current.push(accent1);
+
+        const accent2 = new THREE.PointLight(0xff0088, 0.3, 100);
+        accent2.position.set(-10, 0, -10);
+        sceneRef.current.add(accent2);
+        lightsRef.current.push(accent2);
+    };
 
     useEffect(() => {
         if (!mountRef.current) return;
@@ -130,53 +354,8 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
         controls.dynamicDampingFactor = 0.3;
         controlsRef.current = controls;
 
-        // Абсолютное освещение со всех сторон
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
-
-        // Создаем HemisphereLight для мягкого равномерного освещения
-        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-        hemisphereLight.position.set(0, 50, 0);
-        scene.add(hemisphereLight);
-
-        // Создаем множество направленных источников света со всех сторон
-        const lightPositions = [
-            [100, 100, 100],   // Передний верхний правый
-            [-100, 100, 100],  // Передний верхний левый
-            [100, -100, 100],  // Передний нижний правый
-            [-100, -100, 100], // Передний нижний левый
-            [100, 100, -100],  // Задний верхний правый
-            [-100, 100, -100], // Задний верхний левый
-            [100, -100, -100], // Задний нижний правый
-            [-100, -100, -100],// Задний нижний левый
-            [100, 0, 0],       // Правый
-            [-100, 0, 0],      // Левый
-            [0, 100, 0],       // Верхний
-            [0, -100, 0],      // Нижний
-            [0, 0, 100],       // Передний
-            [0, 0, -100],      // Задний
-        ];
-
-        lightPositions.forEach(pos => {
-            const light = new THREE.DirectionalLight(0xffffff, 1.3);
-            light.position.set(pos[0], pos[1], pos[2]);
-            scene.add(light);
-        });
-
-        // Один основной свет с очень слабыми тенями только для определения граней
-        const mainLight = new THREE.DirectionalLight(0xffffff, 0.2);
-        mainLight.position.set(50, 50, 50);
-        mainLight.castShadow = true;
-        mainLight.shadow.mapSize.width = 1024;
-        mainLight.shadow.mapSize.height = 1024;
-        mainLight.shadow.camera.near = 0.1;
-        mainLight.shadow.camera.far = 500;
-        mainLight.shadow.camera.left = -100;
-        mainLight.shadow.camera.right = 100;
-        mainLight.shadow.camera.top = 100;
-        mainLight.shadow.camera.bottom = -100;
-        mainLight.shadow.bias = -0.0001;
-        scene.add(mainLight);
+        // Инициализируем освещение
+        setupLighting(lightingMode);
 
         const gridHelper = new THREE.GridHelper(100, 50, 0x778394, 0xe2e8f0);
         gridHelperRef.current = gridHelper;
@@ -230,12 +409,21 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
             }
             resizeObserver.disconnect();
             controls.dispose();
+            clearLights();
+            if (envMapRef.current) {
+                envMapRef.current.dispose();
+            }
             if (mountRef.current && renderer.domElement) {
                 mountRef.current.removeChild(renderer.domElement);
             }
             renderer.dispose();
         };
     }, []); // Убираем все зависимости для инициализации сцены
+
+    // Handle lighting mode changes
+    useEffect(() => {
+        setupLighting(lightingMode);
+    }, [lightingMode]);
 
     // Handle display mode changes - теперь добавляем элементы в группу автоповорота
     useEffect(() => {
@@ -295,7 +483,7 @@ const ThreeDViewer = forwardRef<ViewerRef, ViewerProps>(({
 
         // Вычисляем оптимальные параметры камеры
         const maxDim = Math.max(size.x, size.y, size.z);
-        const distance = maxDim * 2.5; // Увеличиваем расстояние для лучшего обзора
+        const distance = maxDim * 1.5; // Увеличиваем расстояние для лучшего обзора - standart 2.5
 
         if (cameraRef.current && controlsRef.current) {
             // Настраиваем near и far плоскости в зависимости от размера модели

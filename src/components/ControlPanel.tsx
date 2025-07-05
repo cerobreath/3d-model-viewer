@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import HelpDialog from './HelpDialog';
 import DisplayModeControls, { DisplayMode } from './DisplayModeControls';
 import BackgroundColorPicker from './BackgroundColorPicker';
+import LightingControls, { LightingMode } from './LightingControls';
 
 interface ControlPanelProps {
     onFullscreen: () => void;
@@ -19,6 +20,8 @@ interface ControlPanelProps {
     onAutoRotateToggle: () => void;
     wireframe: boolean;
     onWireframeToggle: () => void;
+    lightingMode: LightingMode;
+    onLightingModeChange: (mode: LightingMode) => void;
 }
 
 const ControlPanel = ({
@@ -34,7 +37,9 @@ const ControlPanel = ({
                           autoRotate,
                           onAutoRotateToggle,
                           wireframe,
-                          onWireframeToggle
+                          onWireframeToggle,
+                          lightingMode,
+                          onLightingModeChange
                       }: ControlPanelProps) => {
     return (
         <div className="absolute top-4 right-4 z-50">
@@ -96,6 +101,11 @@ const ControlPanel = ({
                 <BackgroundColorPicker
                     color={backgroundColor}
                     onColorChange={onBackgroundColorChange}
+                />
+
+                <LightingControls
+                    currentMode={lightingMode}
+                    onModeChange={onLightingModeChange}
                 />
 
                 <div className="hidden sm:block w-px bg-gray-300 mx-1" />

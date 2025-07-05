@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import ControlPanel from '@/components/ControlPanel';
 import { DisplayMode } from '@/components/DisplayModeControls';
 import ThreeDViewer, { ViewerRef } from '@/components/3DViewer';
+import { LightingMode } from '@/components/LightingControls';
 
 const Index = () => {
   const [fileUrl, setFileUrl] = useState<string>('');
@@ -17,6 +18,7 @@ const Index = () => {
   });
   const [autoRotate, setAutoRotate] = useState(false);
   const [wireframe, setWireframe] = useState(false);
+  const [lightingMode, setLightingMode] = useState<LightingMode>('default');
   const viewerRef = useRef<ViewerRef | null>(null);
   // Убираем лишний вызов resetView()
 
@@ -111,6 +113,10 @@ const Index = () => {
     setWireframe(prev => !prev);
   }, []);
 
+  const handleLightingModeChange = useCallback((mode: LightingMode) => {
+    setLightingMode(mode);
+  }, []);
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -163,6 +169,8 @@ const Index = () => {
                 onAutoRotateToggle={handleAutoRotateToggle}
                 wireframe={wireframe}
                 onWireframeToggle={handleWireframeToggle}
+                lightingMode={lightingMode}
+                onLightingModeChange={handleLightingModeChange}
             />
         )}
 
@@ -176,6 +184,7 @@ const Index = () => {
               backgroundColor={backgroundColor}
               autoRotate={autoRotate}
               wireframe={wireframe}
+              lightingMode={lightingMode}
           />
         </div>
       </div>
