@@ -155,6 +155,10 @@ const HelpDialog = () => {
                   <span className="bg-teal-200 text-teal-900 px-2 py-1 rounded text-xs font-semibold">Цвет фона</span>
                   <span>встроенный селектор цвета фона сцены</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-teal-200 text-teal-900 px-2 py-1 rounded text-xs font-semibold">Освещение</span>
+                  <span>переключение между различными типами освещения</span>
+                </div>
               </div>
             </div>
           </div>
